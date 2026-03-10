@@ -1,29 +1,26 @@
 @import "tailwindcss";
 @plugin '../../hero.ts';
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
-
 @custom-variant dark (&:is(.dark *));
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  /*colors*/
+  --color-brand-primary: #af4425;
+  --color-brand-deep: #662e1c;
+  --color-brand-cream: #ebdcb2;
+  --color-brand-gold: #c9a66b;
+  --color-brand-white: #fffaf7;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+  /*breakpoints*/
+  --breakpoint-xxs: 360px;
+  --breakpoint-xs: 460px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1440px;
+  --breakpoint-xxl: 1920px;
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /*font*/
+  --font-sans:
+    var(--font-main), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
