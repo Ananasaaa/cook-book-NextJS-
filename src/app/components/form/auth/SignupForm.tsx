@@ -16,38 +16,61 @@ const inputClassNames = {
 };
 
 const SignupForm = ({ onCancel, onSuccess }: SignupFormProps) => {
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
 
-    console.log("Sign Up:", {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      password: formData.get("password"),
-      confirmPassword: formData.get("confirmPassword"),
-    });
+    const email = formData.get("email");
+    const password = formData.get("password");
+    const confirmPassword = formData.get("confirmPassword");
 
-    onSuccess();
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      typeof confirmPassword !== "string"
+    ) {
+      console.error("Invalid form data");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      console.log("Passwords do not match");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create account");
+      }
+
+      console.log(data);
+      onSuccess();
+    } catch (error) {
+      console.error("Signup error:", error);
+    }
   };
 
   return (
     <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <Input
-        autoFocus
-        name="name"
-        label="Name"
-        //placeholder="Enter your name"
-        variant="bordered"
-        isRequired
-        classNames={inputClassNames}
-      />
-
-      <Input
         name="email"
         type="email"
         label="Email"
-        //placeholder="Enter your email"
         variant="bordered"
         isRequired
         classNames={inputClassNames}
@@ -57,7 +80,6 @@ const SignupForm = ({ onCancel, onSuccess }: SignupFormProps) => {
         name="password"
         type="password"
         label="Password"
-        //placeholder="Enter your password"
         variant="bordered"
         isRequired
         classNames={inputClassNames}
@@ -67,7 +89,6 @@ const SignupForm = ({ onCancel, onSuccess }: SignupFormProps) => {
         name="confirmPassword"
         type="password"
         label="Confirm Password"
-        //placeholder="Repeat your password"
         variant="bordered"
         isRequired
         classNames={inputClassNames}

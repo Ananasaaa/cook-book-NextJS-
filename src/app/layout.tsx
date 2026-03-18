@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playwrite_CO } from "next/font/google";
 import { Providers } from "./providers";
+import { SessionProvider } from "next-auth/react";
 
 import "./globals.css";
 
@@ -27,11 +28,13 @@ export default function RootLayout({
     <html lang="en" className={playwrite.variable}>
       <body className="bg-brand-cream text-brand-deep font-sans">
         <Providers>
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1 w-full">{children}</main>
-            <Footer />
-          </div>
+          <SessionProvider>
+            <div className="min-h-screen flex flex-col">
+              <Header />
+              <main className="flex-1 w-full">{children}</main>
+              <Footer />
+            </div>
+          </SessionProvider>
         </Providers>
       </body>
     </html>

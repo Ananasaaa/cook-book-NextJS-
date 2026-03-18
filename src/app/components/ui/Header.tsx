@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 import {
   Navbar,
@@ -21,9 +22,17 @@ import AuthModal from "../modals/AuthModal";
 
 export default function Header() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+
+  const isAuth = status === "authenticated";
 
   const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+    setIsMenuOpen(false);
+  };
 
   return (
     <>
@@ -31,7 +40,7 @@ export default function Header() {
         maxWidth="full"
         isMenuOpen={isMenuOpen}
         onMenuOpenChange={setIsMenuOpen}
-        className="border-b border-brand-gold bg-brand-deep h-[80px] font-sans"
+        className="h-[80px] border-b border-brand-gold bg-brand-deep font-sans"
         classNames={{
           wrapper:
             "w-full px-3 xxs:px-4 xs:px-6 md:px-8 lg:px-8 xl:px-12 xxl:px-16",
@@ -39,7 +48,7 @@ export default function Header() {
         }}
       >
         <NavbarBrand>
-          <div className="flex items-center gap-2 xs:gap-3 shrink-0">
+          <div className="flex shrink-0 items-center gap-2 xs:gap-3">
             <Link
               href="/"
               onClick={() => setIsMenuOpen(false)}
@@ -52,36 +61,72 @@ export default function Header() {
                 height={62}
                 priority
                 className="
-          shrink-0 rounded-full object-cover
-          w-[44px] h-[44px]
-          xs:w-[52px] xs:h-[52px]
-          md:w-[58px] md:h-[58px]
-          lg:w-[48px] lg:h-[48px]
-          xl:w-[56px] xl:h-[56px]
-          xxl:w-[62px] xxl:h-[62px]
-        "
+                  h-[44px] w-[44px] shrink-0 rounded-full object-cover
+                  xs:h-[52px] xs:w-[52px]
+                  md:h-[58px] md:w-[58px]
+                  lg:h-[48px] lg:w-[48px]
+                  xl:h-[56px] xl:w-[56px]
+                  xxl:h-[62px] xxl:w-[62px]
+                "
               />
             </Link>
 
             <p
               className="
-        font-bold text-brand-cream whitespace-nowrap
-        text-lg xs:text-xl
-        md:text-2xl
-        lg:text-lg xl:text-xl xxl:text-2xl
-      "
+                whitespace-nowrap font-bold text-brand-cream
+                text-lg xs:text-xl
+                md:text-2xl
+                lg:text-lg xl:text-xl xxl:text-2xl
+              "
             >
               Recipe & Kitchen
             </p>
           </div>
         </NavbarBrand>
+
         <NavbarContent justify="end" className="md:hidden">
+          {isAuth && (
+            <NavbarItem>
+              <p className="max-w-[120px] truncate text-sm text-brand-cream">
+                Hello, {session?.user?.email}
+              </p>
+            </NavbarItem>
+          )}
+
+          {!isAuth && (
+            <NavbarItem>
+              <Button
+                isIconOnly
+                aria-label="Auth"
+                onPress={() => setAuthMode("login")}
+                className="
+                  h-9 w-9 bg-brand-gold text-brand-deep
+                  transition-all duration-300 hover:scale-105
+                  hover:bg-brand-primary hover:text-brand-cream
+                "
+              >
+                <Image src="/auth.svg" alt="Auth" width={20} height={20} />
+              </Button>
+            </NavbarItem>
+          )}
+
+          {isAuth && (
+            <NavbarItem>
+              <Button
+                onPress={handleSignOut}
+                className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
+              >
+                Logout
+              </Button>
+            </NavbarItem>
+          )}
+
           <NavbarMenuToggle className="text-brand-cream" />
         </NavbarContent>
 
         <NavbarContent
           justify="end"
-          className="hidden md:flex gap-1 lg:gap-1 xl:gap-2 xxl:gap-3"
+          className="hidden gap-1 md:flex lg:gap-1 xl:gap-2 xxl:gap-3"
         >
           {siteConfig.navItems.map((item) => {
             const isActive = item.href === pathname;
@@ -109,49 +154,70 @@ export default function Header() {
             );
           })}
 
-          <NavbarItem className="lg:hidden">
-            <Button
-              isIconOnly
-              aria-label="Auth"
-              onPress={() => setAuthMode("login")}
-              className="
-                bg-brand-gold text-brand-deep
-                hover:bg-brand-primary hover:text-brand-cream
-                transition-all duration-300 hover:scale-105
-                md:h-9 md:w-9
-              "
-            >
-              <Image src="/auth.svg" alt="Auth" width={20} height={20} />
-            </Button>
-          </NavbarItem>
+          {!isAuth ? (
+            <>
+              <NavbarItem className="lg:hidden">
+                <Button
+                  isIconOnly
+                  aria-label="Auth"
+                  onPress={() => setAuthMode("login")}
+                  className="
+                    bg-brand-gold text-brand-deep
+                    transition-all duration-300 hover:scale-105
+                    hover:bg-brand-primary hover:text-brand-cream
+                    md:h-9 md:w-9
+                  "
+                >
+                  <Image src="/auth.svg" alt="Auth" width={20} height={20} />
+                </Button>
+              </NavbarItem>
 
-          <NavbarItem className="hidden lg:flex">
-            <Button
-              onPress={() => setAuthMode("login")}
-              className="
-                bg-brand-gold text-brand-deep transition-all duration-300 hover:scale-105
-                hover:bg-brand-primary hover:text-brand-cream
-                lg:text-xs lg:px-3 lg:h-9
-                xl:text-sm xl:px-4 xl:h-10
-              "
-            >
-              Login
-            </Button>
-          </NavbarItem>
+              <NavbarItem className="hidden lg:flex">
+                <Button
+                  onPress={() => setAuthMode("login")}
+                  className="
+                    bg-brand-gold text-brand-deep transition-all duration-300 hover:scale-105
+                    hover:bg-brand-primary hover:text-brand-cream
+                    lg:h-9 lg:px-3 lg:text-xs
+                    xl:h-10 xl:px-4 xl:text-sm
+                  "
+                >
+                  Login
+                </Button>
+              </NavbarItem>
 
-          <NavbarItem className="hidden lg:flex">
-            <Button
-              onPress={() => setAuthMode("signup")}
-              className="
-                bg-brand-gold text-brand-deep transition-all duration-300 hover:scale-105
-                hover:bg-brand-primary hover:text-brand-cream
-                lg:text-xs lg:px-3 lg:h-9
-                xl:text-sm xl:px-4 xl:h-10
-              "
-            >
-              Sign Up
-            </Button>
-          </NavbarItem>
+              <NavbarItem className="hidden lg:flex">
+                <Button
+                  onPress={() => setAuthMode("signup")}
+                  className="
+                    bg-brand-gold text-brand-deep transition-all duration-300 hover:scale-105
+                    hover:bg-brand-primary hover:text-brand-cream
+                    lg:h-9 lg:px-3 lg:text-xs
+                    xl:h-10 xl:px-4 xl:text-sm
+                  "
+                >
+                  Sign Up
+                </Button>
+              </NavbarItem>
+            </>
+          ) : (
+            <>
+              <NavbarItem>
+                <p className="max-w-[220px] truncate text-brand-cream">
+                  Hello, {session?.user?.email}
+                </p>
+              </NavbarItem>
+
+              <NavbarItem>
+                <Button
+                  onPress={handleSignOut}
+                  className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
+                >
+                  Logout
+                </Button>
+              </NavbarItem>
+            </>
+          )}
         </NavbarContent>
 
         <NavbarMenu
@@ -191,25 +257,42 @@ export default function Header() {
           })}
 
           <div className="mt-4 grid gap-3 px-2">
-            <Button
-              onPress={() => {
-                setAuthMode("login");
-                setIsMenuOpen(false);
-              }}
-              className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
-            >
-              Login
-            </Button>
+            {!isAuth ? (
+              <>
+                <Button
+                  onPress={() => {
+                    setAuthMode("login");
+                    setIsMenuOpen(false);
+                  }}
+                  className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
+                >
+                  Login
+                </Button>
 
-            <Button
-              onPress={() => {
-                setAuthMode("signup");
-                setIsMenuOpen(false);
-              }}
-              className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
-            >
-              Sign Up
-            </Button>
+                <Button
+                  onPress={() => {
+                    setAuthMode("signup");
+                    setIsMenuOpen(false);
+                  }}
+                  className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
+                >
+                  Sign Up
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="px-1 text-sm text-brand-cream">
+                  Hello, {session?.user?.email}
+                </p>
+
+                <Button
+                  onPress={handleSignOut}
+                  className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
+                >
+                  Logout
+                </Button>
+              </>
+            )}
           </div>
         </NavbarMenu>
       </Navbar>
