@@ -22,9 +22,10 @@ import AuthModal from "../modals/AuthModal";
 
 export default function Header() {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   const isAuth = status === "authenticated";
+  const shouldShowAuthPlaceholders = status === "loading";
 
   const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -85,15 +86,38 @@ export default function Header() {
         </NavbarBrand>
 
         <NavbarContent justify="end" className="md:hidden">
-          {isAuth && (
+          {shouldShowAuthPlaceholders && (
+            <>
+              <NavbarItem>
+                <div className="h-5 w-[120px] animate-pulse rounded bg-brand-gold/30" />
+              </NavbarItem>
+              <NavbarItem>
+                <div className="h-9 w-24 animate-pulse rounded bg-brand-gold/30" />
+              </NavbarItem>
+            </>
+          )}
+
+          {!shouldShowAuthPlaceholders && isAuth && (
             <NavbarItem>
-              <p className="max-w-[120px] truncate text-sm text-brand-cream">
-                Hello, {session?.user?.email}
-              </p>
+              <div
+                className="
+                  h-9 w-9 bg-brand-gold text-brand-deep
+                  transition-all duration-300 hover:scale-105
+                  hover:bg-brand-primary hover:text-brand-cream
+                "
+              >
+                <Image
+                  src="/auth-unlock.svg"
+                  alt="Authenticated"
+                  width={24}
+                  height={24}
+                  className="text-brand-cream"
+                />
+              </div>
             </NavbarItem>
           )}
 
-          {!isAuth && (
+          {!shouldShowAuthPlaceholders && !isAuth && (
             <NavbarItem>
               <Button
                 isIconOnly
@@ -110,7 +134,7 @@ export default function Header() {
             </NavbarItem>
           )}
 
-          {isAuth && (
+          {!shouldShowAuthPlaceholders && isAuth && (
             <NavbarItem>
               <Button
                 onPress={handleSignOut}
@@ -154,7 +178,22 @@ export default function Header() {
             );
           })}
 
-          {!isAuth ? (
+          {shouldShowAuthPlaceholders && (
+            <>
+              <NavbarItem className="lg:hidden">
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-[120px] animate-pulse rounded bg-brand-gold/30" />
+                  <div className="h-9 w-28 animate-pulse rounded bg-brand-gold/30" />
+                </div>
+              </NavbarItem>
+              <NavbarItem className="hidden lg:flex gap-2">
+                <div className="h-5 w-[220px] animate-pulse rounded bg-brand-gold/30" />
+                <div className="h-9 w-28 animate-pulse rounded bg-brand-gold/30" />
+              </NavbarItem>
+            </>
+          )}
+
+          {!shouldShowAuthPlaceholders && !isAuth && (
             <>
               <NavbarItem className="lg:hidden">
                 <Button
@@ -200,12 +239,28 @@ export default function Header() {
                 </Button>
               </NavbarItem>
             </>
-          ) : (
+          )}
+
+          {!shouldShowAuthPlaceholders && isAuth && (
             <>
               <NavbarItem>
-                <p className="max-w-[220px] truncate text-brand-cream">
-                  Hello, {session?.user?.email}
-                </p>
+                <div
+                  className="
+                    flex h-9 w-9 items-center justify-center rounded-full
+                    bg-brand-gold text-brand-deep
+                    transition-all duration-300 hover:scale-105
+                    hover:bg-brand-primary hover:text-brand-cream
+                    md:h-9 md:w-9
+                  "
+                >
+                  <Image
+                    src="/auth-unlock.svg"
+                    alt="Authenticated"
+                    width={24}
+                    height={24}
+                    className="text-brand-cream"
+                  />
+                </div>
               </NavbarItem>
 
               <NavbarItem>
@@ -257,7 +312,14 @@ export default function Header() {
           })}
 
           <div className="mt-4 grid gap-3 px-2">
-            {!isAuth ? (
+            {shouldShowAuthPlaceholders && (
+              <div className="flex flex-col gap-3">
+                <div className="h-5 w-40 animate-pulse rounded bg-brand-gold/30" />
+                <div className="h-9 w-28 animate-pulse rounded bg-brand-gold/30" />
+              </div>
+            )}
+
+            {!shouldShowAuthPlaceholders && !isAuth && (
               <>
                 <Button
                   onPress={() => {
@@ -279,11 +341,28 @@ export default function Header() {
                   Sign Up
                 </Button>
               </>
-            ) : (
+            )}
+
+            {!shouldShowAuthPlaceholders && isAuth && (
               <>
-                <p className="px-1 text-sm text-brand-cream">
-                  Hello, {session?.user?.email}
-                </p>
+                <div className="flex items-center gap-2 px-1">
+                  <div
+                    className="
+                      flex h-9 w-9 items-center justify-center rounded-full
+                      bg-brand-gold text-brand-deep
+                      transition-all duration-300 hover:scale-105
+                      hover:bg-brand-primary hover:text-brand-cream
+                    "
+                  >
+                    <Image
+                      src="/auth-unlock.svg"
+                      alt="Authenticated"
+                      width={24}
+                      height={24}
+                      className="text-brand-cream"
+                    />
+                  </div>
+                </div>
 
                 <Button
                   onPress={handleSignOut}

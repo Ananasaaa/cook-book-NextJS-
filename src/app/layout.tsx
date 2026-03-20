@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playwrite_CO } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Providers } from "./providers";
 import { SessionProvider } from "next-auth/react";
 
@@ -27,15 +28,17 @@ export default function RootLayout({
   return (
     <html lang="en" className={playwrite.variable}>
       <body className="bg-brand-cream text-brand-deep font-sans">
-        <Providers>
-          <SessionProvider>
-            <div className="min-h-screen flex flex-col">
-              <Header />
-              <main className="flex-1 w-full">{children}</main>
-              <Footer />
-            </div>
-          </SessionProvider>
-        </Providers>
+        <NuqsAdapter>
+          <Providers>
+            <SessionProvider>
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <main className="flex-1 w-full">{children}</main>
+                <Footer />
+              </div>
+            </SessionProvider>
+          </Providers>
+        </NuqsAdapter>
       </body>
     </html>
   );

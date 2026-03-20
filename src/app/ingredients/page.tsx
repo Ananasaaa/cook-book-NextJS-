@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type Key } from "react";
+import { Suspense, useEffect, useMemo, useState, type Key } from "react";
 import { Input, Select, SelectItem, Button } from "@heroui/react";
 import Image from "next/image";
+import { useQueryState } from "nuqs";
 import {
   mealTypes,
   cookingTimes,
@@ -79,9 +80,21 @@ const cookingTimeOrder: Record<string, number> = {
   over60: 4,
 };
 
-export default function IngredientsPage() {
-  const [draftFilters, setDraftFilters] = useState<Filters>(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState<Filters>(initialFilters);
+function IngredientsWithNuqs() {
+  const [urlSearch] = useQueryState("search", { defaultValue: "" });
+  const [draftFilters, setDraftFilters] = useState<Filters>(() => ({
+    ...initialFilters,
+    search: urlSearch,
+  }));
+  const [appliedFilters, setAppliedFilters] = useState<Filters>(() => ({
+    ...initialFilters,
+    search: urlSearch,
+  }));
+
+  useEffect(() => {
+    setDraftFilters((prev) => ({ ...prev, search: urlSearch }));
+    setAppliedFilters((prev) => ({ ...prev, search: urlSearch }));
+  }, [urlSearch]);
 
   const filteredRecipes = useMemo(() => {
     const searchValue = appliedFilters.search.trim().toLowerCase();
@@ -269,5 +282,13 @@ export default function IngredientsPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function IngredientsPage() {
+  return (
+    <Suspense fallback={null}>
+      <IngredientsWithNuqs />
+    </Suspense>
   );
 }

@@ -31,10 +31,10 @@ const cards = [
 
 export default function Cards() {
   return (
-    <section className="w-full px-4 py-10 xxs:px-4 xxs:py-10 xs:px-5 xs:py-12 md:px-6 md:py-14 lg:px-8 lg:py-16 xl:px-10 xl:py-20 xxl:px-0 xxl:py-24">
+    <section className="w-full px-4 pt-12 mt-12 pb-8 mb-8 xxs:px-4 xxs:pt-12 xxs:mt-12 xxs:pb-8 xxs:mb-8 xs:px-5 xs:pt-14 xs:mt-14 xs:pb-10 xs:mb-10 md:px-6 md:pt-16 md:mt-16 md:pb-12 md:mb-12 lg:px-8 lg:pt-20 lg:mt-20 lg:pb-14 lg:mb-14 xl:px-10 xl:pt-24 xl:mt-24 xl:pb-16 xl:mb-16 xxl:px-0 xxl:pt-24 xxl:mt-24 xxl:pb-20 xxl:mb-20">
       <div className="mx-auto w-full max-w-full md:max-w-[900px] lg:max-w-[1100px] xl:max-w-[1360px] xxl:max-w-[1680px]">
         <div className="mb-6 xs:mb-7 md:mb-8 lg:mb-10 xl:mb-12">
-          <h2 className="text-[28px] font-semibold leading-tight text-brand-deep xxs:text-[28px] xs:text-[32px] md:text-[38px] lg:text-[44px] xl:text-[52px] xxl:text-[60px]">
+          <h2 className="text-[28px] font-semibold leading-tight text-brand-deep xxs:text-[28px] xs:text-[32px] md:text-[38px] lg:text-[44px] xl:text-[52px] xxl:text-[50px] mt-8">
             Popular Recipes
           </h2>
         </div>
@@ -44,8 +44,7 @@ export default function Cards() {
             <Card
               key={card.id}
               shadow="none"
-              className="group w-full rounded-[28px] border border-brand-gold bg-[#fffaf3] p-3 transition-transform duration-300 hover:-translate-y-1 xxs:rounded-[28px] xs:rounded-[30px] xs:p-4 md:rounded-[30px] lg:rounded-[32px] lg:p-4 xl:rounded-[34px] xl:p-5"
-            >
+              className="group w-full rounded-[28px] border border-brand-gold bg-[#fffaf3] p-3 transition-transform duration-300 hover:-translate-y-1 xxs:rounded-[28px] xs:rounded-[30px] xs:p-4 md:rounded-[30px] lg:rounded-[32px] lg:p-4 xl:rounded-[34px] xl:p-5">
               <CardBody className="gap-4 p-0 xs:gap-5 lg:gap-6">
                 <div className="overflow-hidden rounded-[22px] xs:rounded-[24px] lg:rounded-[26px] xl:rounded-[28px]">
                   <Image

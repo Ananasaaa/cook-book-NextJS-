@@ -1,4 +1,10 @@
+import PageContent from "../components/common/page-content";
+
 const About = () => {
-  return <h1>About</h1>;
+  return (
+    <div>
+      <PageContent />
+    </div>
+  );
 };
 export default About;
