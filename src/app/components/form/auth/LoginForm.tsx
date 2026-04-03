@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { Form, Input, Button } from "@heroui/react";
+
+import UserNotFoundModal from "../../modals/UserNotFoundModal";
 
 type LoginFormProps = {
   onCancel: () => void;
   onSuccess: () => void;
+  onSuggestSignup?: () => void;
 };
 
 const inputClassNames = {
@@ -17,11 +21,18 @@ const inputClassNames = {
   innerWrapper: "h-full items-center",
 };
 
-const LoginForm = ({ onCancel, onSuccess }: LoginFormProps) => {
+const LoginForm = ({
+  onCancel,
+  onSuccess,
+  onSuggestSignup,
+}: LoginFormProps) => {
   const router = useRouter();
+  const [userNotFoundOpen, setUserNotFoundOpen] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setFormError(null);
 
     const formData = new FormData(event.currentTarget);
 
@@ -32,6 +43,29 @@ const LoginForm = ({ onCancel, onSuccess }: LoginFormProps) => {
       return;
     }
 
+    const attempt = await fetch("/api/auth/login-attempt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = (await attempt.json()) as { code?: string };
+
+    if (data.code === "USER_NOT_FOUND") {
+      setUserNotFoundOpen(true);
+      return;
+    }
+
+    if (data.code === "INVALID_CREDENTIALS") {
+      setFormError("Incorrect password. Try again or reset it if needed.");
+      return;
+    }
+
+    if (data.code !== "OK") {
+      setFormError("Something went wrong. Please try again.");
+      return;
+    }
+
     const result = await signIn("credentials", {
       email,
       password,
@@ -39,12 +73,16 @@ const LoginForm = ({ onCancel, onSuccess }: LoginFormProps) => {
     });
 
     if (result?.ok) {
+      await getSession();
       onSuccess();
       router.refresh();
+    } else {
+      setFormError("Sign-in failed. Please try again.");
     }
   };
 
   return (
+    <>
     <Form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <Input
         autoFocus
@@ -65,6 +103,12 @@ const LoginForm = ({ onCancel, onSuccess }: LoginFormProps) => {
         classNames={inputClassNames}
       />
 
+      {formError ? (
+        <p className="text-sm text-brand-red" role="alert">
+          {formError}
+        </p>
+      ) : null}
+
       <div className="mt-2 flex w-full items-center justify-between gap-3">
         <Button
           type="button"
@@ -83,6 +127,13 @@ const LoginForm = ({ onCancel, onSuccess }: LoginFormProps) => {
         </Button>
       </div>
     </Form>
+
+    <UserNotFoundModal
+      isOpen={userNotFoundOpen}
+      onOpenChange={setUserNotFoundOpen}
+      onRegister={() => onSuggestSignup?.()}
+    />
+    </>
   );
 };
 

@@ -62,6 +62,7 @@ const AuthModal = ({
                 <LoginForm
                   onCancel={onClose}
                   onSuccess={() => onOpenChange(false)}
+                  onSuggestSignup={() => onModeChange("signup")}
                 />
               ) : (
                 <SignupForm

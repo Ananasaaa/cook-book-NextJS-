@@ -19,6 +19,7 @@ import {
 
 import { siteConfig } from "../../config/site.config";
 import AuthModal from "../modals/AuthModal";
+import LogoutConfirmModal from "../modals/LogoutConfirmModal";
 
 export default function Header() {
   const pathname = usePathname();
@@ -29,8 +30,13 @@ export default function Header() {
 
   const [authMode, setAuthMode] = useState<"login" | "signup" | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
-  const handleSignOut = async () => {
+  const visibleNavItems = siteConfig.navItems.filter(
+    (item) => !item.requiresAuth || isAuth,
+  );
+
+  const handleConfirmSignOut = async () => {
     await signOut({ callbackUrl: "/" });
     setIsMenuOpen(false);
   };
@@ -137,7 +143,7 @@ export default function Header() {
           {!shouldShowAuthPlaceholders && isAuth && (
             <NavbarItem>
               <Button
-                onPress={handleSignOut}
+                onPress={() => setLogoutConfirmOpen(true)}
                 className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
               >
                 Logout
@@ -152,7 +158,7 @@ export default function Header() {
           justify="end"
           className="hidden gap-1 md:flex lg:gap-1 xl:gap-2 xxl:gap-3"
         >
-          {siteConfig.navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = item.href === pathname;
 
             return (
@@ -265,7 +271,7 @@ export default function Header() {
 
               <NavbarItem>
                 <Button
-                  onPress={handleSignOut}
+                  onPress={() => setLogoutConfirmOpen(true)}
                   className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
                 >
                   Logout
@@ -291,7 +297,7 @@ export default function Header() {
             },
           }}
         >
-          {siteConfig.navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = item.href === pathname;
 
             return (
@@ -365,7 +371,7 @@ export default function Header() {
                 </div>
 
                 <Button
-                  onPress={handleSignOut}
+                  onPress={() => setLogoutConfirmOpen(true)}
                   className="bg-brand-gold text-brand-deep hover:bg-brand-primary hover:text-brand-cream"
                 >
                   Logout
@@ -383,6 +389,12 @@ export default function Header() {
           if (!open) setAuthMode(null);
         }}
         onModeChange={(nextMode) => setAuthMode(nextMode)}
+      />
+
+      <LogoutConfirmModal
+        isOpen={logoutConfirmOpen}
+        onOpenChange={setLogoutConfirmOpen}
+        onConfirm={handleConfirmSignOut}
       />
     </>
   );

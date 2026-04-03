@@ -21,8 +21,8 @@ export default function HeroSearch() {
   const handleFind = () => {
     const value = search.trim();
     const url = value
-      ? `/ingredients?search=${encodeURIComponent(value)}`
-      : "/ingredients";
+      ? `/recipes?search=${encodeURIComponent(value)}`
+      : "/recipes";
     router.push(url);
   };
 

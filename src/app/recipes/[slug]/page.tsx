@@ -3,6 +3,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { recipes } from "../../../mocks/ingredients";
 
+import styles from "./recipe-detail.module.css";
+
 type RecipePageProps = {
   params: Promise<{
     slug: string;
@@ -18,64 +20,89 @@ export default async function RecipePage({ params }: RecipePageProps) {
     notFound();
   }
 
+  const instructionBlocks = recipe.instructions
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const metaParts = [
+    recipe.mealTypeLabel,
+    recipe.cookingTimeLabel,
+    recipe.difficultyLabel,
+    ...recipe.dietLabels,
+  ];
+
   return (
-    <main className="min-h-screen bg-brand-cream px-4 py-10 xxs:px-4 xs:px-5 md:px-6 lg:px-8 xl:px-10 xxl:px-0">
-      <div className="mx-auto w-full max-w-full md:max-w-[900px] lg:max-w-[1100px] xl:max-w-[1200px]">
-        <Link
-          href="/ingredients"
-          className="mb-6 inline-flex text-sm text-brand-primary transition-opacity hover:opacity-70"
-        >
-          ← Back to recipes
-        </Link>
+    <div className={styles.shell}>
+      <div className={styles.inner}>
+        <nav className={styles.nav}>
+          <Link href="/recipes" className={styles.backLink}>
+            <span aria-hidden className={styles.arrow}>
+              ←
+            </span>
+            <span>All recipes</span>
+          </Link>
+        </nav>
 
-        <div className="overflow-hidden rounded-[28px] border border-brand-gold bg-[#fffaf3]">
-          <div className="relative h-[260px] w-full xs:h-[320px] md:h-[420px]">
-            <Image
-              src={recipe.image}
-              alt={recipe.title}
-              fill
-              className="object-cover"
-            />
-          </div>
+        <article>
+          <div className={styles.topRow}>
+            <div className={styles.colFigure}>
+              <figure className={styles.figure}>
+                <Image
+                  src={recipe.image}
+                  alt={recipe.title}
+                  fill
+                  priority
+                  sizes="540px"
+                  className={styles.imageCover}
+                />
+              </figure>
+            </div>
 
-          <div className="p-5 xs:p-6 md:p-8">
-            <p className="mb-2 text-sm uppercase tracking-[0.16em] text-brand-primary">
-              {recipe.categoryLabel}
-            </p>
+            <div className={styles.colAside}>
+              <header className={styles.headerBlock}>
+                <p className={styles.category}>{recipe.categoryLabel}</p>
+                <h1 className={styles.title}>{recipe.title}</h1>
+              </header>
 
-            <h1 className="mb-4 text-[30px] font-semibold leading-tight text-brand-deep xs:text-[34px] md:text-[44px]">
-              {recipe.title}
-            </h1>
-
-            <p className="mb-6 max-w-[760px] text-[15px] leading-7 text-brand-deep/75 md:text-base">
-              {recipe.description}
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <div className="rounded-full border border-brand-gold bg-white px-4 py-2 text-sm text-brand-deep">
-                {recipe.mealTypeLabel}
-              </div>
-
-              <div className="rounded-full border border-brand-gold bg-white px-4 py-2 text-sm text-brand-deep">
-                {recipe.cookingTimeLabel}
-              </div>
-
-              <div className="rounded-full border border-brand-gold bg-white px-4 py-2 text-sm text-brand-deep">
-                {recipe.difficultyLabel}
-              </div>
-
-              {recipe.dietLabels.map((diet) => (
-                <div
-                  key={diet}
-                  className="rounded-full border border-brand-gold bg-white px-4 py-2 text-sm text-brand-deep"
-                >
-                  {diet}
-                </div>
-              ))}
+              <section className={styles.ingredientsSection}>
+                <h2 className={styles.sectionTitle}>Ingredients</h2>
+                <ul className={styles.ingredientList}>
+                  {recipe.ingredients.map((ing, index) => (
+                    <li key={`${ing.name}-${index}`} className={styles.ingredientRow}>
+                      <span className={styles.ingredientName}>{ing.name}</span>
+                      <span className={styles.ingredientAmount}>{ing.amount}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             </div>
           </div>
-        </div>
+
+          <div className={styles.divider} />
+
+          <div className={styles.intro}>
+            <p className={styles.description}>{recipe.description}</p>
+            <p className={styles.meta}>{metaParts.join(" · ")}</p>
+          </div>
+
+          <section className={styles.methodSection}>
+            <h2 className={styles.methodTitle}>How to cook</h2>
+            <ol className={styles.stepList}>
+              {instructionBlocks.map((block, index) => (
+                <li key={index}>
+                  <div className={styles.stepItem}>
+                    <span className={styles.stepBadge} aria-hidden>
+                      {index + 1}
+                    </span>
+                    <p className={styles.stepText}>{block}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </article>
       </div>
-    </main>
+    </div>
   );
 }

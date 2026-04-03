@@ -19,7 +19,7 @@ export default function Banner() {
             <div className="absolute inset-0 flex items-end justify-end p-4 xxs:p-3">
               <h2 className="text-right text-4xl font-bold text-brand-deep xxs:text-4xl xs:text-5xl md:text-6xl lg:text-8xl xl:text-8xl">
                 <span className="inline-flex items-center gap-2 rounded-2xl bg-brand-gold px-4 py-2 transition-transform duration-300 group-hover:-translate-y-0.5">
-                  Discover New Recipes
+                  Easter Recipes
                   <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
                     →
                   </span>
