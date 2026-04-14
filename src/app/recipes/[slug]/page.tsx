@@ -2,6 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { recipes } from "../../../mocks/ingredients";
+import { prisma } from "../../../utils/prisma";
+import { auth } from "../../../auth/auth";
+import RecipeComments from "./RecipeComments";
 
 import styles from "./recipe-detail.module.css";
 
@@ -19,6 +22,67 @@ export default async function RecipePage({ params }: RecipePageProps) {
   if (!recipe) {
     notFound();
   }
+
+  const session = await auth();
+
+  const userEmail =
+    typeof session?.user?.email === "string" && session.user.email.length > 0
+      ? session.user.email
+      : null;
+
+  let currentUserId = "";
+
+  if (userEmail) {
+    const currentUser = await prisma.user.findUnique({
+      where: { email: userEmail },
+      select: { id: true },
+    });
+
+    currentUserId = currentUser?.id ?? "";
+  }
+
+  const dbComments = await prisma.recipeComment.findMany({
+    where: {
+      recipeSlug: slug,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          email: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+        },
+      },
+      likes: {
+        where: {
+          userId: currentUserId,
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  const initialComments = dbComments.map((comment) => ({
+    id: comment.id,
+    body: comment.body,
+    createdAt: comment.createdAt.toISOString(),
+    userId: comment.userId,
+    user: {
+      id: comment.user.id,
+      email: comment.user.email,
+    },
+    likesCount: comment._count.likes,
+    isLikedByMe: currentUserId !== "" && comment.likes.length > 0,
+  }));
 
   const instructionBlocks = recipe.instructions
     .split(/\n\n+/)
@@ -69,9 +133,13 @@ export default async function RecipePage({ params }: RecipePageProps) {
                 <h2 className={styles.sectionTitle}>Ingredients</h2>
                 <ul className={styles.ingredientList}>
                   {recipe.ingredients.map((ing, index) => (
-                    <li key={`${ing.name}-${index}`} className={styles.ingredientRow}>
+                    <li
+                      key={`${ing.name}-${index}`}
+                      className={styles.ingredientRow}>
                       <span className={styles.ingredientName}>{ing.name}</span>
-                      <span className={styles.ingredientAmount}>{ing.amount}</span>
+                      <span className={styles.ingredientAmount}>
+                        {ing.amount}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -102,6 +170,8 @@ export default async function RecipePage({ params }: RecipePageProps) {
             </ol>
           </section>
         </article>
+
+        <RecipeComments slug={slug} initialComments={initialComments} />
       </div>
     </div>
   );

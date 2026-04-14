@@ -9,17 +9,52 @@ datasource db {
 }
 
 model User {
-  id         String    @id @default(uuid())
-  email      String    @unique
-  password   String
+  id           String         @id @default(uuid())
+  email        String         @unique
+  password     String
 
-  accounts      Account[]
-  sessions      Session[]
+  accounts     Account[]
+  sessions     Session[]
+  comments     RecipeComment[]
+  commentLikes CommentLike[]
 
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
 
   @@map("users")
+}
+
+model RecipeComment {
+  id         String        @id @default(uuid())
+  recipeSlug String        @map("recipe_slug")
+  body       String
+  userId     String        @map("user_id")
+
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes      CommentLike[]
+
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  @@index([recipeSlug])
+  @@index([userId])
+  @@map("recipe_comments")
+}
+
+model CommentLike {
+  id         String         @id @default(uuid())
+  commentId  String         @map("comment_id")
+  userId     String         @map("user_id")
+
+  comment    RecipeComment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("comment_likes")
 }
 
 model Account {
@@ -35,28 +70,29 @@ model Account {
   scope              String?
   id_token           String? @db.Text
   session_state      String?
- 
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
- 
+
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique @map("session_token")
   userId       String   @map("user_id")
   expires      DateTime
+
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@map("sessions")
 }
- 
+
 model VerificationToken {
   identifier String
   token      String
   expires    DateTime
- 
+
   @@unique([identifier, token])
   @@map("verification_tokens")
 }
