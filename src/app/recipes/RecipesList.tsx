@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQueryState } from "nuqs";
@@ -9,7 +9,8 @@ import { useSession } from "next-auth/react";
 import AuthModal from "../components/modals/AuthModal";
 import BookmarkIcon from "../components/recipes/BookmarkIcon";
 
-import { recipes } from "../../mocks/ingredients";
+import { recipes, type RecipeCard } from "../../mocks/ingredients";
+import { loadUserRecipes } from "../../lib/user-recipes-storage";
 import { savedRecipesStorageKeyFromSession } from "../../lib/saved-recipes-storage";
 import { useSavedRecipeSlugs } from "../../hooks/useSavedRecipeSlugs";
 
@@ -33,19 +34,32 @@ export default function RecipesList() {
 
   const [savedSlugs, setSavedSlugs] = useSavedRecipeSlugs(storageKey);
 
+  const [userRecipes, setUserRecipes] = useState<RecipeCard[]>([]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setUserRecipes(loadUserRecipes());
+    });
+  }, []);
+
   const effectiveSavedSlugs =
     status === "authenticated" ? savedSlugs : new Set<string>();
+
+  const allRecipes = useMemo(
+    () => [...userRecipes, ...recipes],
+    [userRecipes],
+  );
 
   const filteredRecipes = useMemo(() => {
     const normalized = search.trim().toLowerCase();
     const list = !normalized
-      ? recipes
-      : recipes.filter((item) =>
+      ? allRecipes
+      : allRecipes.filter((item) =>
           item.title.toLowerCase().includes(normalized),
         );
 
     return [...list].sort((a, b) => b.popularity - a.popularity);
-  }, [search]);
+  }, [search, allRecipes]);
 
   const handleSaveToggle = (slug: string) => {
     if (status !== "authenticated" || !storageKey) {
@@ -64,7 +78,7 @@ export default function RecipesList() {
   const searchValue = search.trim();
   const titleText = searchValue
     ? `${formatSearchTitle(searchValue)} (${filteredRecipes.length})`
-    : `All recipes (${recipes.length})`;
+    : `All recipes (${allRecipes.length})`;
   const emptyTitle = searchValue ? `No recipes for '${searchValue}'` : null;
 
   return (
@@ -94,7 +108,7 @@ export default function RecipesList() {
 
                   return (
                     <div
-                      key={item.id}
+                      key={item.slug}
                       className="group flex items-start justify-between gap-4 rounded-[24px] border border-brand-gold bg-[#fffaf3] p-4 transition-transform duration-300 hover:-translate-y-1"
                     >
                       <Link
@@ -107,6 +121,7 @@ export default function RecipesList() {
                             alt={item.title}
                             width={88}
                             height={88}
+                            unoptimized={item.image.startsWith("data:")}
                             className="h-full w-full object-cover"
                           />
                         </div>

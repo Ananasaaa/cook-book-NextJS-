@@ -1,0 +1,552 @@
+.page {
+  min-height: 100vh;
+  background: #ebdcb2;
+  color: #662e1c;
+}
+
+.wrapper {
+  max-width: 1520px;
+  margin: 0 auto;
+  padding: 20px 20px 40px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.savedText {
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(102, 46, 28, 0.55);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.deleteButton,
+.secondaryButton,
+.primaryButton {
+  height: 50px;
+  padding: 0 26px;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 500;
+  transition: 0.2s ease;
+  cursor: pointer;
+}
+
+.deleteButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid #b51d0a;
+  background: #fffaf7;
+  color: #b51d0a;
+}
+
+.deleteIcon {
+  display: block;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.deleteButton:hover {
+  background: rgba(181, 29, 10, 0.08);
+}
+
+.secondaryButton {
+  border: 1px solid rgba(201, 166, 107, 0.55);
+  background: #fffaf7;
+  color: #662e1c;
+}
+
+.secondaryButton:hover {
+  border-color: #af4425;
+  color: #af4425;
+}
+
+.primaryButton {
+  border: none;
+  background: #af4425;
+  color: #ebdcb2;
+}
+
+.primaryButton:hover {
+  background: #662e1c;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 396px 1fr;
+  gap: 32px;
+  margin-bottom: 44px;
+}
+
+.photoBox {
+  min-height: 555px;
+  border-radius: 16px;
+  background: rgba(255, 250, 247, 0.85);
+  border: 1px solid rgba(201, 166, 107, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+
+.photoBoxClickable {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.photoBoxClickable:hover {
+  border-color: rgba(175, 68, 37, 0.45);
+  box-shadow: 0 4px 20px rgba(102, 46, 28, 0.08);
+}
+
+.photoBoxClickable:focus-within {
+  outline: 2px solid rgba(175, 68, 37, 0.45);
+  outline-offset: 2px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.photoPreview {
+  position: absolute;
+  inset: 0;
+}
+
+.photoPreviewImg {
+  object-fit: cover;
+}
+
+.photoContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.addPhotoImage {
+  width: 52px;
+  height: auto;
+  max-height: 52px;
+  object-fit: contain;
+}
+
+.addPhotoImageSmall {
+  width: 44px;
+  height: auto;
+  max-height: 44px;
+  object-fit: contain;
+}
+
+.photoContent h3 {
+  margin: 26px 0 8px;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #662e1c;
+}
+
+.photoContent p {
+  max-width: 290px;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.35;
+  color: rgba(102, 46, 28, 0.65);
+}
+
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.titleInput,
+.description,
+.metaInput,
+.lineInput,
+.stepInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  border-radius: 8px;
+  background: rgba(255, 250, 247, 0.95);
+  border: 1px solid rgba(201, 166, 107, 0.25);
+  color: #662e1c;
+}
+
+.titleInput {
+  height: 70px;
+  padding: 0 16px;
+  font-size: 34px;
+  font-weight: 700;
+  color: #662e1c;
+}
+
+.titleInput::placeholder {
+  color: rgba(201, 166, 107, 0.75);
+}
+
+.authorRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.authorAvatar {
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.authorInfo {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.authorEmail {
+  font-size: 18px;
+  font-weight: 600;
+  color: #662e1c;
+  word-break: break-word;
+}
+
+.description {
+  min-height: 78px;
+  resize: none;
+  padding: 16px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.description::placeholder {
+  color: rgba(201, 166, 107, 0.75);
+}
+
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 396px 1fr;
+  gap: 42px;
+  align-items: start;
+}
+
+.column {
+  min-width: 0;
+}
+
+.sectionTitle {
+  margin: 0 0 26px;
+  font-size: 36px;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #662e1c;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+.metaLabel {
+  min-width: 180px;
+  font-size: 24px;
+  line-height: 1.2;
+  color: rgba(102, 46, 28, 0.75);
+}
+
+.metaInput {
+  max-width: 200px;
+  height: 56px;
+  padding: 0 14px;
+  font-size: 18px;
+}
+
+.metaInput::placeholder {
+  color: rgba(201, 166, 107, 0.75);
+}
+
+.list,
+.stepsList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ingredientAddRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.ingredientAddButton {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.ingredientAddButtonPrimary {
+  border: none;
+  background: #af4425;
+  color: #ebdcb2;
+}
+
+.ingredientAddButtonPrimary:hover {
+  background: #662e1c;
+}
+
+.ingredientAddButtonSecondary {
+  border: 1px solid rgba(201, 166, 107, 0.55);
+  background: #fffaf7;
+  color: #662e1c;
+}
+
+.ingredientAddButtonSecondary:hover {
+  border-color: #af4425;
+  color: #af4425;
+}
+
+.ingredientRow,
+.stepRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iconButton {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: rgba(102, 46, 28, 0.45);
+}
+
+.iconButton:hover {
+  color: #af4425;
+}
+
+.dragHandle {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.rowDragging {
+  opacity: 0.55;
+}
+
+.rowDropTarget {
+  outline: 2px dashed rgba(175, 68, 37, 0.45);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.menuWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  min-width: 120px;
+  padding: 4px 0;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 166, 107, 0.45);
+  background: #fffaf7;
+  box-shadow: 0 8px 24px rgba(102, 46, 28, 0.12);
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 500;
+  color: #b51d0a;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: rgba(181, 29, 10, 0.08);
+}
+
+.lineInput {
+  height: 56px;
+  padding: 0 16px;
+  font-size: 18px;
+  color: rgba(102, 46, 28, 0.85);
+}
+
+.stepLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.stepNumber {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #af4425;
+  color: #ebdcb2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.stepInput {
+  height: 48px;
+  padding: 0 16px;
+  font-size: 18px;
+  color: rgba(102, 46, 28, 0.85);
+}
+
+.stepInput::placeholder {
+  color: rgba(201, 166, 107, 0.75);
+}
+
+.stepImageBox {
+  position: relative;
+  width: 210px;
+  height: 140px;
+  margin-top: 20px;
+  margin-left: 84px;
+  border-radius: 12px;
+  background: rgba(255, 250, 247, 0.85);
+  border: 1px dashed rgba(201, 166, 107, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stepImageBoxClickable {
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stepImageBoxClickable:hover {
+  border-color: rgba(175, 68, 37, 0.45);
+  box-shadow: 0 4px 16px rgba(102, 46, 28, 0.08);
+}
+
+.stepImageBoxClickable:focus-within {
+  outline: 2px solid rgba(175, 68, 37, 0.45);
+  outline-offset: 2px;
+}
+
+.stepStepPhotoPreview {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.stepStepPhotoPreviewImg {
+  object-fit: cover;
+}
+
+@media (max-width: 1200px) {
+  .hero,
+  .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .photoBox {
+    min-height: 380px;
+  }
+
+  .stepImageBox {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 16px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .deleteButton,
+  .secondaryButton,
+  .primaryButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .titleInput {
+    font-size: 26px;
+  }
+
+  .sectionTitle {
+    font-size: 28px;
+  }
+
+  .metaRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .metaLabel {
+    min-width: auto;
+    font-size: 20px;
+  }
+
+  .metaInput {
+    max-width: 100%;
+  }
+}
