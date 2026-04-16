@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import RecipePublishedModal from "@/src/app/components/modals/RecipePublishedModal";
+import { buildStoredRecipeCoverDataUrl } from "@/src/lib/compress-image-to-data-url";
 import { appendUserRecipe } from "@/src/lib/user-recipes-storage";
 import { buildUserRecipeCard } from "@/src/lib/build-user-recipe";
 
@@ -13,24 +14,6 @@ import RecipeEditableLists, {
   type RecipeEditableListsRef,
 } from "./RecipeEditableLists";
 import styles from "./create-recipe.module.css";
-
-async function blobUrlToDataUrl(url: string): Promise<string | null> {
-  if (!url.startsWith("blob:")) {
-    return url;
-  }
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    return await new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result as string);
-      r.onerror = reject;
-      r.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
 
 type CreateRecipeClientProps = {
   userEmail: string;
@@ -42,12 +25,24 @@ export default function CreateRecipeClient({ userEmail }: CreateRecipeClientProp
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [publishedOpen, setPublishedOpen] = useState(false);
 
-  const handleCoverPreviewChange = useCallback((url: string | null) => {
-    setCoverPreviewUrl(url);
-  }, []);
+  const coverPreviewUrl = useMemo(() => {
+    if (!coverFile) {
+      return null;
+    }
+    return URL.createObjectURL(coverFile);
+  }, [coverFile]);
+
+  useEffect(() => {
+    if (!coverPreviewUrl) {
+      return;
+    }
+    return () => {
+      URL.revokeObjectURL(coverPreviewUrl);
+    };
+  }, [coverPreviewUrl]);
 
   useEffect(() => {
     if (!publishedOpen) {
@@ -62,10 +57,11 @@ export default function CreateRecipeClient({ userEmail }: CreateRecipeClientProp
 
   async function handlePublish() {
     let image = "/add-photo.png";
-    if (coverPreviewUrl?.startsWith("blob:")) {
-      const dataUrl = await blobUrlToDataUrl(coverPreviewUrl);
-      if (dataUrl) {
-        image = dataUrl;
+    if (coverFile) {
+      try {
+        image = await buildStoredRecipeCoverDataUrl(coverFile);
+      } catch {
+        image = "/add-photo.png";
       }
     }
 
@@ -78,7 +74,7 @@ export default function CreateRecipeClient({ userEmail }: CreateRecipeClientProp
       steps: snapshot?.steps ?? [],
     });
 
-    appendUserRecipe(recipe);
+    await appendUserRecipe(recipe);
     setPublishedOpen(true);
   }
 
@@ -114,7 +110,10 @@ export default function CreateRecipeClient({ userEmail }: CreateRecipeClientProp
         </header>
 
         <section className={styles.hero}>
-          <RecipeCoverUpload onPreviewChange={handleCoverPreviewChange} />
+          <RecipeCoverUpload
+            previewUrl={coverPreviewUrl}
+            onFileSelect={setCoverFile}
+          />
 
           <div className={styles.heroContent}>
             <input

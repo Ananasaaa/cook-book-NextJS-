@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ComponentProps } from "react";
 
+import {
+  isInlineRecipeImageSrc,
+  normalizeRecipeImageSrc,
+} from "@/src/lib/recipe-image-display";
 import { getUserRecipeBySlug } from "@/src/lib/user-recipes-storage";
 import type { RecipeCard } from "@/src/mocks/ingredients";
 
@@ -70,8 +74,8 @@ export default function RecipeDetailView({
     ...recipe.dietLabels,
   ];
 
-  const imageUnoptimized =
-    recipe.image.startsWith("data:") || recipe.image.startsWith("blob:");
+  const recipeImageSrc = normalizeRecipeImageSrc(recipe.image);
+  const imageIsDataOrBlob = isInlineRecipeImageSrc(recipeImageSrc);
 
   return (
     <div className={styles.shell}>
@@ -89,15 +93,29 @@ export default function RecipeDetailView({
           <div className={styles.topRow}>
             <div className={styles.colFigure}>
               <figure className={styles.figure}>
-                <Image
-                  src={recipe.image}
-                  alt={recipe.title}
-                  fill
-                  priority
-                  sizes="540px"
-                  unoptimized={imageUnoptimized}
-                  className={styles.imageCover}
-                />
+                {imageIsDataOrBlob ? (
+                  <img
+                    src={recipeImageSrc}
+                    alt={recipe.title}
+                    className={styles.imageCoverNative}
+                    loading="eager"
+                    decoding="async"
+                    onError={(e) => {
+                      const el = e.currentTarget;
+                      el.onerror = null;
+                      el.src = "/add-photo.png";
+                    }}
+                  />
+                ) : (
+                  <Image
+                    src={recipeImageSrc}
+                    alt={recipe.title}
+                    fill
+                    priority
+                    sizes="540px"
+                    className={styles.imageCover}
+                  />
+                )}
               </figure>
             </div>
 

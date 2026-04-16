@@ -10,7 +10,14 @@ import AuthModal from "../components/modals/AuthModal";
 import BookmarkIcon from "../components/recipes/BookmarkIcon";
 
 import { recipes, type RecipeCard } from "../../mocks/ingredients";
-import { loadUserRecipes } from "../../lib/user-recipes-storage";
+import {
+  isInlineRecipeImageSrc,
+  normalizeRecipeImageSrc,
+} from "../../lib/recipe-image-display";
+import {
+  loadUserRecipes,
+  USER_RECIPES_CHANGED_EVENT,
+} from "../../lib/user-recipes-storage";
 import { savedRecipesStorageKeyFromSession } from "../../lib/saved-recipes-storage";
 import { useSavedRecipeSlugs } from "../../hooks/useSavedRecipeSlugs";
 
@@ -37,18 +44,22 @@ export default function RecipesList() {
   const [userRecipes, setUserRecipes] = useState<RecipeCard[]>([]);
 
   useEffect(() => {
-    queueMicrotask(() => {
-      setUserRecipes(loadUserRecipes());
-    });
+    const sync = () => {
+      queueMicrotask(() => {
+        setUserRecipes(loadUserRecipes());
+      });
+    };
+    sync();
+    window.addEventListener(USER_RECIPES_CHANGED_EVENT, sync);
+    return () => {
+      window.removeEventListener(USER_RECIPES_CHANGED_EVENT, sync);
+    };
   }, []);
 
   const effectiveSavedSlugs =
     status === "authenticated" ? savedSlugs : new Set<string>();
 
-  const allRecipes = useMemo(
-    () => [...userRecipes, ...recipes],
-    [userRecipes],
-  );
+  const allRecipes = useMemo(() => [...userRecipes, ...recipes], [userRecipes]);
 
   const filteredRecipes = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -100,6 +111,8 @@ export default function RecipesList() {
               <div className="flex flex-col gap-4">
                 {filteredRecipes.map((item) => {
                   const saved = effectiveSavedSlugs.has(item.slug);
+                  const thumb = normalizeRecipeImageSrc(item.image);
+                  const thumbIsDataOrBlob = isInlineRecipeImageSrc(thumb);
 
                   const excerpt =
                     item.description.length > 90
@@ -109,21 +122,37 @@ export default function RecipesList() {
                   return (
                     <div
                       key={item.slug}
-                      className="group flex items-start justify-between gap-4 rounded-[24px] border border-brand-gold bg-[#fffaf3] p-4 transition-transform duration-300 hover:-translate-y-1"
-                    >
+                      className="group flex items-start justify-between gap-4 rounded-[24px] border border-brand-gold bg-[#fffaf3] p-4 transition-transform duration-300 hover:-translate-y-1">
                       <Link
                         href={`/recipes/${item.slug}`}
-                        className="flex flex-1 items-center gap-4 min-w-0"
-                      >
-                        <div className="h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[22px] border border-brand-gold bg-white/30">
-                          <Image
-                            src={item.image}
-                            alt={item.title}
-                            width={88}
-                            height={88}
-                            unoptimized={item.image.startsWith("data:")}
-                            className="h-full w-full object-cover"
-                          />
+                        className="flex flex-1 items-center gap-4 min-w-0">
+                        <div className="relative flex h-[88px] w-[88px] min-h-[88px] min-w-[88px] max-h-[88px] max-w-[88px] shrink-0 items-center justify-center overflow-hidden rounded-[22px] border border-brand-gold bg-white/30">
+                          {thumbIsDataOrBlob ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={thumb}
+                              alt={item.title}
+                              width={88}
+                              height={88}
+                              className="block h-[88px] w-[88px] shrink-0 rounded-[22px] border border-brand-gold bg-white/30 object-cover"
+                              onError={(e) => {
+                                const el = e.currentTarget;
+                                el.onerror = null;
+                                el.src = "/add-photo.png";
+                              }}
+                            />
+                          ) : (
+                            <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[22px] border border-brand-gold bg-white/30">
+                              <Image
+                                src={thumb}
+                                alt={item.title}
+                                width={88}
+                                height={88}
+                                sizes="88px"
+                                className="block h-full w-full object-cover"
+                              />
+                            </div>
+                          )}
                         </div>
 
                         <div className="min-w-0 flex-1">
@@ -166,8 +195,7 @@ export default function RecipesList() {
                               ? "Saved"
                               : "Save"
                             : "Login to save"
-                        }
-                      >
+                        }>
                         <BookmarkIcon saved={saved} />
                       </button>
                     </div>
@@ -190,4 +218,3 @@ export default function RecipesList() {
     </>
   );
 }
-
