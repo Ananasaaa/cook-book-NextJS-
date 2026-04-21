@@ -181,6 +181,144 @@
   gap: 22px;
 }
 
+.heroMetaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+  width: 100%;
+  align-items: start;
+  overflow: visible;
+}
+
+.selectField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.selectCaption {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(102, 46, 28, 0.6);
+}
+
+.selectRoot {
+  position: relative;
+  width: 100%;
+}
+
+.selectRootOpen {
+  z-index: 50;
+}
+
+.selectTrigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 52px;
+  padding: 0 46px 0 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 166, 107, 0.4);
+  background: rgba(255, 250, 247, 0.98);
+  color: #662e1c;
+  font-size: 17px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.selectTrigger:hover {
+  border-color: rgba(175, 68, 37, 0.35);
+}
+
+.selectTrigger:focus-visible {
+  border-color: rgba(175, 68, 37, 0.55);
+  box-shadow: 0 0 0 3px rgba(175, 68, 37, 0.12);
+}
+
+.selectTriggerOpen {
+  border-color: rgba(175, 68, 37, 0.5);
+  box-shadow: 0 0 0 3px rgba(175, 68, 37, 0.1);
+}
+
+.selectTriggerLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectChevron {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -2px;
+  border-right: 2px solid rgba(102, 46, 28, 0.42);
+  border-bottom: 2px solid rgba(102, 46, 28, 0.42);
+  transform: translateY(-50%) rotate(45deg);
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
+
+.selectChevronOpen {
+  margin-top: 2px;
+  transform: translateY(-50%) rotate(-135deg);
+}
+
+.selectList {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 166, 107, 0.45);
+  background: #fffaf7;
+  box-shadow:
+    0 10px 28px rgba(102, 46, 28, 0.12),
+    0 2px 8px rgba(102, 46, 28, 0.06);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.selectOption {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #662e1c;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.selectOption:hover {
+  background: rgba(201, 166, 107, 0.22);
+}
+
+.selectOptionActive {
+  background: rgba(175, 68, 37, 0.12);
+  color: #af4425;
+}
+
 .titleInput,
 .description,
 .metaInput,
@@ -534,6 +672,10 @@
 
   .sectionTitle {
     font-size: 28px;
+  }
+
+  .heroMetaGrid {
+    grid-template-columns: 1fr;
   }
 
   .metaRow {

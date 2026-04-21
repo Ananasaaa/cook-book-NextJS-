@@ -1,39 +1,12 @@
-export type Option = {
-  key: string;
-  label: string;
-};
-
-export type RecipeIngredient = {
-  name: string;
-  amount: string;
-};
-
-export type RecipeCard = {
-  id: number;
-  slug: string;
-  title: string;
-  categoryLabel: string;
-  mealType: string;
-  mealTypeLabel: string;
-  cookingTime: string;
-  cookingTimeLabel: string;
-  difficulty: string;
-  difficultyLabel: string;
-  diets: string[];
-  dietLabels: string[];
-  popularity: number;
-  image: string;
-  description: string;
-  ingredients: RecipeIngredient[];
-  instructions: string;
-};
+import type { Option, RecipeCard } from "@/src/types/recipe";
 
 export const mealTypes: Option[] = [
   { key: "all", label: "All Meal Types" },
   { key: "breakfast", label: "Breakfast" },
-  { key: "dessert", label: "Dessert" },
-  { key: "snack", label: "Snack" },
   { key: "brunch", label: "Brunch" },
+  { key: "dessert", label: "Dessert" },
+  { key: "mousse", label: "Mousse" },
+  { key: "snack", label: "Snack" },
 ];
 
 export const cookingTimes: Option[] = [
