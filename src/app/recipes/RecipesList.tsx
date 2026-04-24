@@ -241,6 +241,7 @@ type AuthMode = "login" | "signup" | null;
 
 type RecipesListProps = {
   initialRecipes: RecipeCard[];
+  embedded?: boolean;
 };
 
 const formatSearchTitle = (value: string) => {
@@ -250,7 +251,10 @@ const formatSearchTitle = (value: string) => {
   return `${first}${rest}`;
 };
 
-export default function RecipesList({ initialRecipes }: RecipesListProps) {
+export default function RecipesList({
+  initialRecipes,
+  embedded = false,
+}: RecipesListProps) {
   const [search] = useQueryState("search", { defaultValue: "" });
   const { data: session, status } = useSession();
 
@@ -301,9 +305,16 @@ export default function RecipesList({ initialRecipes }: RecipesListProps) {
 
   const emptyTitle = searchValue ? `No recipes for '${searchValue}'` : null;
 
+  const shellClassName = [
+    "bg-brand-cream px-4 py-10 xxs:px-4 xs:px-5 md:px-6 lg:px-8 xl:px-10 xxl:px-0",
+    embedded ? "pb-16" : "min-h-screen",
+  ].join(" ");
+
+  const ListShell = embedded ? "section" : "main";
+
   return (
     <>
-      <main className="min-h-screen bg-brand-cream px-4 py-10 xxs:px-4 xs:px-5 md:px-6 lg:px-8 xl:px-10 xxl:px-0">
+      <ListShell className={shellClassName}>
         <div className="mx-auto w-full max-w-full md:max-w-[900px] lg:max-w-[1100px] xl:max-w-[1360px] xxl:max-w-[1680px]">
           <header className="mb-6">
             <h1 className="text-[30px] font-semibold leading-tight text-brand-deep xs:text-[38px] md:text-[46px]">
@@ -418,7 +429,7 @@ export default function RecipesList({ initialRecipes }: RecipesListProps) {
             )}
           </section>
         </div>
-      </main>
+      </ListShell>
 
       <AuthModal
         mode={authMode}

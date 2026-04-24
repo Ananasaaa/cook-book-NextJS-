@@ -3,7 +3,6 @@
 import Image from "next/image";
 import {
   forwardRef,
-  useCallback,
   useEffect,
   useId,
   useImperativeHandle,
@@ -13,8 +12,9 @@ import {
 
 import styles from "./create-recipe.module.css";
 
-const MIME_INGREDIENT = "application/x-recipe-ingredient";
-const MIME_STEP = "application/x-recipe-step";
+//константы-идентификаторы типа перетаскиваемого элемента для drag-and-drop
+const MIME_INGREDIENT = "ingredient";
+const MIME_STEP = "step";
 
 function DragIcon() {
   return (
@@ -71,6 +71,7 @@ type DotMenuProps = {
   onDelete: () => void;
 };
 
+//menu component
 function DotMenu({
   menuId,
   isOpen,
@@ -81,19 +82,18 @@ function DotMenu({
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    if (!isOpen) return;
 
     const handlePointerDown = (e: PointerEvent) => {
-      if (wrapRef.current?.contains(e.target as Node)) {
-        return;
-      }
+      if (wrapRef.current?.contains(e.target as Node)) return;
       onClose();
     };
 
     document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
   }, [isOpen, onClose]);
 
   return (
@@ -108,7 +108,8 @@ function DotMenu({
         onClick={onToggle}>
         <DotsIcon />
       </button>
-      {isOpen ? (
+
+      {isOpen && (
         <div
           id={`${menuId}-menu`}
           className={styles.menu}
@@ -129,7 +130,7 @@ function DotMenu({
             Delete
           </button>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -153,9 +154,6 @@ export type RecipeEditableListsRef = {
 };
 
 function newLineId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
   return `line-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
@@ -163,412 +161,468 @@ function linePlaceholder(kind: IngredientLine["kind"]) {
   return kind === "chapter" ? "Chapter title" : "e.g. 250 g flour";
 }
 
+//перемещение элементов по id
 function reorderById<T extends { id: string }>(
   items: T[],
   activeId: string,
   overId: string,
-): T[] {
+) {
   if (activeId === overId) {
     return items;
   }
-  const from = items.findIndex((x) => x.id === activeId);
-  const to = items.findIndex((x) => x.id === overId);
-  if (from === -1 || to === -1) {
+
+  const fromIndex = items.findIndex((item) => item.id === activeId);
+  const toIndex = items.findIndex((item) => item.id === overId);
+
+  if (fromIndex === -1 || toIndex === -1) {
     return items;
   }
+
   const next = [...items];
-  const [removed] = next.splice(from, 1);
-  const insertAt = next.findIndex((x) => x.id === overId);
-  next.splice(insertAt, 0, removed);
+  const movedItem = next[fromIndex]; //эл из массива по индексу
+
+  next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, movedItem);
+
   return next;
 }
 
-const RecipeEditableLists = forwardRef<RecipeEditableListsRef, object>(
+//для очистки временного url фото шага
+function revokeBlobUrl(url?: string) {
+  if (url?.startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function getRowClassName(
+  baseClass: string,
+  isDragging: boolean,
+  isDropTarget: boolean,
+) {
+  return [
+    baseClass,
+    isDragging ? styles.rowDragging : "",
+    isDropTarget ? styles.rowDropTarget : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+//main component
+const RecipeEditableLists = forwardRef<RecipeEditableListsRef>(
   function RecipeEditableLists(_, ref) {
-  const baseId = useId();
-  const [ingredientLines, setIngredientLines] = useState<IngredientLine[]>([
-    { id: "i1", kind: "ingredient", value: "250 g flour" },
-    { id: "i2", kind: "ingredient", value: "100 ml water" },
-    { id: "i3", kind: "ingredient", value: "250 g flour" },
-  ]);
-  const [steps, setSteps] = useState<StepLine[]>([
-    { id: "s1", value: "Put the flour in a bowl." },
-    { id: "s2", value: "" },
-  ]);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
+    const baseId = useId();
 
-  const [draggingIngredientId, setDraggingIngredientId] = useState<
-    string | null
-  >(null);
-  const [dropTargetIngredientId, setDropTargetIngredientId] = useState<
-    string | null
-  >(null);
+    const [ingredientLines, setIngredientLines] = useState<IngredientLine[]>([
+      { id: "i1", kind: "ingredient", value: "250 g flour" },
+      { id: "i2", kind: "ingredient", value: "100 ml water" },
+      { id: "i3", kind: "ingredient", value: "250 g flour" },
+    ]);
 
-  const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
-  const [dropTargetStepId, setDropTargetStepId] = useState<string | null>(null);
+    const [steps, setSteps] = useState<StepLine[]>([
+      { id: "s1", value: "Put the flour in a bowl." },
+      { id: "s2", value: "" },
+    ]);
 
-  const [stepPhotoById, setStepPhotoById] = useState<Record<string, string>>({});
-  const stepPhotoByIdRef = useRef<Record<string, string>>({});
-  // eslint-disable-next-line react-hooks/refs
-  stepPhotoByIdRef.current = stepPhotoById;
+    const [openMenu, setOpenMenu] = useState<string | null>(null);
+    //перемещение ингредиента
+    const [draggingIngredientId, setDraggingIngredientId] = useState<
+      string | null
+    >(null);
+    const [dropTargetIngredientId, setDropTargetIngredientId] = useState<
+      string | null
+    >(null);
 
-  useEffect(() => {
-    return () => {
-      Object.values(stepPhotoByIdRef.current).forEach((url) => {
-        if (url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
-      });
+    //перемещение шага
+    const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
+    const [dropTargetStepId, setDropTargetStepId] = useState<string | null>(
+      null,
+    );
+    //хранение фото шага
+    const [stepPhotoById, setStepPhotoById] = useState<Record<string, string>>(
+      {},
+    );
+    const stepPhotoByIdRef = useRef<Record<string, string>>({});
+
+    useEffect(() => {
+      stepPhotoByIdRef.current = stepPhotoById;
+    }, [stepPhotoById]);
+
+    useEffect(() => {
+      return () => {
+        const photoUrls = Object.values(stepPhotoByIdRef.current);
+
+        photoUrls.forEach((url) => {
+          revokeBlobUrl(url);
+        });
+      };
+    }, []);
+
+    const closeMenu = () => {
+      setOpenMenu(null);
     };
-  }, []);
 
-  const closeMenu = useCallback(() => setOpenMenu(null), []);
+    //хранение фото шага
+    const handleStepPhoto = (
+      stepId: string,
+      e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+      const file = e.target.files?.[0];
 
-  const handleStepPhoto = (stepId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith("image/")) {
-      return;
-    }
-    setStepPhotoById((prev) => {
-      const old = prev[stepId];
-      if (old?.startsWith("blob:")) {
-        URL.revokeObjectURL(old);
+      if (!file || !file.type.startsWith("image/")) {
+        return;
       }
-      return { ...prev, [stepId]: URL.createObjectURL(file) };
-    });
-    e.target.value = "";
-  };
 
-  const addIngredientLine = () => {
-    setIngredientLines((prev) => [
-      ...prev,
-      { id: newLineId(), kind: "ingredient", value: "" },
-    ]);
-  };
+      setStepPhotoById((prev) => {
+        revokeBlobUrl(prev[stepId]);
 
-  const addChapterLine = () => {
-    setIngredientLines((prev) => [
-      ...prev,
-      { id: newLineId(), kind: "chapter", value: "" },
-    ]);
-  };
+        return {
+          ...prev,
+          [stepId]: URL.createObjectURL(file),
+        };
+      });
 
-  const removeIngredientLine = (id: string) => {
-    setIngredientLines((prev) => prev.filter((line) => line.id !== id));
-  };
+      e.target.value = "";
+    };
 
-  const updateIngredientLine = (id: string, value: string) => {
-    setIngredientLines((prev) =>
-      prev.map((line) => (line.id === id ? { ...line, value } : line)),
-    );
-  };
+    //добавление ингредиента
+    const addIngredientLine = () => {
+      setIngredientLines((prev) => [
+        ...prev,
+        { id: newLineId(), kind: "ingredient", value: "" },
+      ]);
+    };
 
-  const removeStep = (id: string) => {
-    setStepPhotoById((prev) => {
-      const url = prev[id];
-      if (url?.startsWith("blob:")) {
-        URL.revokeObjectURL(url);
-      }
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setSteps((prev) => prev.filter((s) => s.id !== id));
-  };
+    const addChapterLine = () => {
+      setIngredientLines((prev) => [
+        ...prev,
+        { id: newLineId(), kind: "chapter", value: "" },
+      ]);
+    };
 
-  const updateStep = (id: string, value: string) => {
-    setSteps((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, value } : s)),
-    );
-  };
+    const removeIngredientLine = (id: string) => {
+      setIngredientLines((prev) => prev.filter((line) => line.id !== id));
+    };
 
-  const addStep = () => {
-    setSteps((prev) => [...prev, { id: newLineId(), value: "" }]);
-  };
+    const updateIngredientLine = (id: string, value: string) => {
+      setIngredientLines((prev) =>
+        prev.map((line) => (line.id === id ? { ...line, value } : line)),
+      );
+    };
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      getSnapshot: () => ({
-        ingredientLines: ingredientLines.map(({ kind, value }) => ({
-          kind,
-          value,
-        })),
-        steps: steps.map((s) => ({ value: s.value })),
+    //удаление шага
+    const removeStep = (id: string) => {
+      setStepPhotoById((prev) => {
+        const next = { ...prev };
+        revokeBlobUrl(next[id]);
+        delete next[id];
+        return next;
+      });
+
+      setSteps((prev) => prev.filter((step) => step.id !== id));
+    };
+
+    const updateStep = (id: string, value: string) => {
+      setSteps((prev) =>
+        prev.map((step) => (step.id === id ? { ...step, value } : step)),
+      );
+    };
+
+    const addStep = () => {
+      setSteps((prev) => [...prev, { id: newLineId(), value: "" }]);
+    };
+
+    //передача данных из компонента наружу через ref
+    useImperativeHandle(
+      ref,
+      () => ({
+        getSnapshot: () => ({
+          ingredientLines: ingredientLines.map(({ kind, value }) => ({
+            kind,
+            value,
+          })),
+          steps: steps.map(({ value }) => ({ value })),
+        }),
       }),
-    }),
-    [ingredientLines, steps],
-  );
+      [ingredientLines, steps],
+    );
 
-  return (
-    <section className={styles.bottomGrid}>
-      <div className={styles.column}>
-        <h2 className={styles.sectionTitle}>Ingredients</h2>
+    return (
+      <section className={styles.bottomGrid}>
+        <div className={styles.column}>
+          <h2 className={styles.sectionTitle}>Ingredients</h2>
 
-        <div className={styles.metaRow}>
-          <label className={styles.metaLabel} htmlFor={`${baseId}-servings`}>
-            Servings
-          </label>
-          <input
-            id={`${baseId}-servings`}
-            className={styles.metaInput}
-            placeholder="How many servings?"
-            type="text"
-          />
-        </div>
+          <div className={styles.metaRow}>
+            <label className={styles.metaLabel} htmlFor={`${baseId}-servings`}>
+              Servings
+            </label>
+            <input
+              id={`${baseId}-servings`}
+              className={styles.metaInput}
+              placeholder="How many servings?"
+              type="text"
+            />
+          </div>
 
-        <div className={styles.list}>
-          {ingredientLines.map((line) => {
-            const menuKey = `${baseId}-line-${line.id}`;
-            const isDragging = draggingIngredientId === line.id;
-            const isDropTarget = dropTargetIngredientId === line.id;
+          {/* ingredients/chapters */}
+          <div className={styles.list}>
+            {ingredientLines.map((line) => {
+              const menuKey = `${baseId}-line-${line.id}`;
+              const isDragging = draggingIngredientId === line.id;
+              const isDropTarget = dropTargetIngredientId === line.id;
 
-            return (
-              <div
-                key={line.id}
-                className={[
-                  styles.ingredientRow,
-                  isDragging ? styles.rowDragging : "",
-                  isDropTarget ? styles.rowDropTarget : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
+              return (
+                <div
+                  key={line.id}
+                  className={getRowClassName(
+                    styles.ingredientRow,
+                    isDragging,
+                    isDropTarget,
+                  )}
                   onDragOver={(e) => {
-                    if (draggingIngredientId === null) {
-                      return;
-                    }
+                    if (!draggingIngredientId) return;
+
                     e.preventDefault();
                     e.dataTransfer.dropEffect = "move";
                     setDropTargetIngredientId(line.id);
                   }}
-                onDragLeave={(e) => {
-                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                    setDropTargetIngredientId(null);
-                  }
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const sourceId =
-                    e.dataTransfer.getData(MIME_INGREDIENT) ||
-                    e.dataTransfer.getData("text/plain");
-                  setDropTargetIngredientId(null);
-                  if (!sourceId || sourceId === line.id) {
-                    return;
-                  }
-                  setIngredientLines((prev) =>
-                    reorderById(prev, sourceId, line.id),
-                  );
-                }}>
-                <div
-                  className={`${styles.iconButton} ${styles.dragHandle}`}
-                  draggable
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Drag to reorder"
-                  aria-grabbed={isDragging}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(MIME_INGREDIENT, line.id);
-                    e.dataTransfer.setData("text/plain", line.id);
-                    e.dataTransfer.effectAllowed = "move";
-                    setDraggingIngredientId(line.id);
-                  }}
-                  onDragEnd={() => {
-                    setDraggingIngredientId(null);
-                    setDropTargetIngredientId(null);
-                  }}>
-                  <DragIcon />
-                </div>
-
-                <input
-                  className={styles.lineInput}
-                  value={line.value}
-                  placeholder={linePlaceholder(line.kind)}
-                  onChange={(e) =>
-                    updateIngredientLine(line.id, e.target.value)
-                  }
-                  type="text"
-                />
-
-                <DotMenu
-                  menuId={menuKey}
-                  isOpen={openMenu === menuKey}
-                  onToggle={() =>
-                    setOpenMenu((prev) => (prev === menuKey ? null : menuKey))
-                  }
-                  onClose={closeMenu}
-                  onDelete={() => removeIngredientLine(line.id)}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className={styles.ingredientAddRow}>
-          <button
-            type="button"
-            className={`${styles.ingredientAddButton} ${styles.ingredientAddButtonPrimary}`}
-            onClick={addIngredientLine}>
-            Add ingredient
-          </button>
-          <button
-            type="button"
-            className={`${styles.ingredientAddButton} ${styles.ingredientAddButtonSecondary}`}
-            onClick={addChapterLine}>
-            Add chapter
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.column}>
-        <h2 className={styles.sectionTitle}>How to cook</h2>
-
-        <div className={styles.metaRow}>
-          <label className={styles.metaLabel} htmlFor={`${baseId}-time`}>
-            Cooking time
-          </label>
-          <input
-            id={`${baseId}-time`}
-            className={styles.metaInput}
-            placeholder="Total cooking time"
-            type="text"
-          />
-        </div>
-
-        <div className={styles.stepsList}>
-          {steps.map((step, index) => {
-            const menuKey = `${baseId}-step-${step.id}`;
-            const isDragging = draggingStepId === step.id;
-            const isDropTarget = dropTargetStepId === step.id;
-
-            return (
-              <div key={step.id}>
-                <div
-                  className={[
-                    styles.stepRow,
-                    isDragging ? styles.rowDragging : "",
-                    isDropTarget ? styles.rowDropTarget : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  onDragOver={(e) => {
-                    if (draggingStepId === null) {
-                      return;
-                    }
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    setDropTargetStepId(step.id);
-                  }}
                   onDragLeave={(e) => {
                     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                      setDropTargetStepId(null);
+                      setDropTargetIngredientId(null);
                     }
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    const sourceId =
-                      e.dataTransfer.getData(MIME_STEP) ||
-                      e.dataTransfer.getData("text/plain");
-                    setDropTargetStepId(null);
-                    if (!sourceId || sourceId === step.id) {
-                      return;
-                    }
-                    setSteps((prev) => reorderById(prev, sourceId, step.id));
-                  }}>
-                  <div className={styles.stepLeft}>
-                    <div className={styles.stepNumber}>{index + 1}</div>
 
-                    <div
-                      className={`${styles.iconButton} ${styles.dragHandle}`}
-                      draggable
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Drag to reorder"
-                      aria-grabbed={isDragging}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData(MIME_STEP, step.id);
-                        e.dataTransfer.setData("text/plain", step.id);
-                        e.dataTransfer.effectAllowed = "move";
-                        setDraggingStepId(step.id);
-                      }}
-                      onDragEnd={() => {
-                        setDraggingStepId(null);
-                        setDropTargetStepId(null);
-                      }}>
-                      <DragIcon />
-                    </div>
+                    const sourceId =
+                      e.dataTransfer.getData(MIME_INGREDIENT) ||
+                      e.dataTransfer.getData("text/plain");
+
+                    setDropTargetIngredientId(null);
+
+                    if (!sourceId || sourceId === line.id) return;
+                    //меняем порядрк
+                    setIngredientLines((prev) =>
+                      reorderById(prev, sourceId, line.id),
+                    );
+                  }}>
+                  {/*кнопка перенос для ingredients*/}
+                  <div
+                    className={`${styles.iconButton} ${styles.dragHandle}`}
+                    draggable
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Drag to reorder"
+                    aria-grabbed={isDragging}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(MIME_INGREDIENT, line.id);
+                      e.dataTransfer.setData("text/plain", line.id);
+                      e.dataTransfer.effectAllowed = "move";
+                      setDraggingIngredientId(line.id);
+                    }}
+                    onDragEnd={() => {
+                      //когда перетаскивание закончилось очищаем состояния
+                      setDraggingIngredientId(null);
+                      setDropTargetIngredientId(null);
+                    }}>
+                    <DragIcon />
                   </div>
 
+                  {/* input для ингредиента */}
                   <input
-                    className={styles.stepInput}
-                    value={step.value}
-                    placeholder="Describe this step"
-                    onChange={(e) => updateStep(step.id, e.target.value)}
+                    className={styles.lineInput}
+                    value={line.value}
+                    placeholder={linePlaceholder(line.kind)}
+                    onChange={(e) =>
+                      updateIngredientLine(line.id, e.target.value)
+                    }
                     type="text"
                   />
 
+                  {/* меню удаления ингредиента */}
                   <DotMenu
                     menuId={menuKey}
                     isOpen={openMenu === menuKey}
                     onToggle={() =>
-                      setOpenMenu((prev) =>
-                        prev === menuKey ? null : menuKey,
-                      )
+                      setOpenMenu((prev) => (prev === menuKey ? null : menuKey))
                     }
                     onClose={closeMenu}
-                    onDelete={() => removeStep(step.id)}
+                    onDelete={() => removeIngredientLine(line.id)}
                   />
                 </div>
+              );
+            })}
+          </div>
 
-                <label
-                  className={`${styles.stepImageBox} ${styles.stepImageBoxClickable}`}
-                  aria-label={
-                    stepPhotoById[step.id]
-                      ? "Change step photo"
-                      : "Add step photo"
-                  }>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className={styles.srOnly}
-                    onChange={(e) => handleStepPhoto(step.id, e)}
-                  />
-                  {stepPhotoById[step.id] ? (
-                    <div className={styles.stepStepPhotoPreview}>
-                      <Image
-                        src={stepPhotoById[step.id]}
-                        alt=""
-                        fill
-                        unoptimized
-                        sizes="210px"
-                        className={styles.stepStepPhotoPreviewImg}
-                      />
+          {/* кнопки добавления ингредиента/главы */}
+          <div className={styles.ingredientAddRow}>
+            <button
+              type="button"
+              className={`${styles.ingredientAddButton} ${styles.ingredientAddButtonPrimary}`}
+              onClick={addIngredientLine}>
+              Add ingredient
+            </button>
+
+            <button
+              type="button"
+              className={`${styles.ingredientAddButton} ${styles.ingredientAddButtonSecondary}`}
+              onClick={addChapterLine}>
+              Add chapter
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.column}>
+          <h2 className={styles.sectionTitle}>How to cook</h2>
+
+          <div className={styles.metaRow}>
+            <label className={styles.metaLabel} htmlFor={`${baseId}-time`}>
+              Cooking time
+            </label>
+            <input
+              id={`${baseId}-time`}
+              className={styles.metaInput}
+              placeholder="Total cooking time"
+              type="text"
+            />
+          </div>
+
+          <div className={styles.stepsList}>
+            {steps.map((step, index) => {
+              const menuKey = `${baseId}-step-${step.id}`;
+              const isDragging = draggingStepId === step.id;
+              const isDropTarget = dropTargetStepId === step.id;
+
+              return (
+                <div key={step.id}>
+                  {/* одна строка шага */}
+                  <div
+                    className={getRowClassName(
+                      styles.stepRow,
+                      isDragging,
+                      isDropTarget,
+                    )}
+                    onDragOver={(e) => {
+                      if (!draggingStepId) return;
+
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      setDropTargetStepId(step.id);
+                    }}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setDropTargetStepId(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+
+                      const sourceId =
+                        e.dataTransfer.getData(MIME_STEP) ||
+                        e.dataTransfer.getData("text/plain");
+
+                      setDropTargetStepId(null);
+
+                      if (!sourceId || sourceId === step.id) return;
+
+                      setSteps((prev) => reorderById(prev, sourceId, step.id));
+                    }}>
+                    <div className={styles.stepLeft}>
+                      <div className={styles.stepNumber}>{index + 1}</div>
+
+                      <div
+                        className={`${styles.iconButton} ${styles.dragHandle}`}
+                        draggable
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Drag to reorder"
+                        aria-grabbed={isDragging}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData(MIME_STEP, step.id);
+                          e.dataTransfer.setData("text/plain", step.id);
+                          e.dataTransfer.effectAllowed = "move";
+                          setDraggingStepId(step.id);
+                        }}
+                        onDragEnd={() => {
+                          setDraggingStepId(null);
+                          setDropTargetStepId(null);
+                        }}>
+                        <DragIcon />
+                      </div>
                     </div>
-                  ) : (
-                    <Image
-                      src="/add-photo.png"
-                      alt=""
-                      width={44}
-                      height={44}
-                      className={styles.addPhotoImageSmall}
-                    />
-                  )}
-                </label>
-              </div>
-            );
-          })}
-        </div>
 
-        <div className={styles.ingredientAddRow}>
-          <button
-            type="button"
-            className={`${styles.ingredientAddButton} ${styles.ingredientAddButtonPrimary}`}
-            onClick={addStep}>
-            Add step
-          </button>
+                    <input
+                      className={styles.stepInput}
+                      value={step.value}
+                      placeholder="Describe this step"
+                      onChange={(e) => updateStep(step.id, e.target.value)}
+                      type="text"
+                    />
+
+                    <DotMenu
+                      menuId={menuKey}
+                      isOpen={openMenu === menuKey}
+                      onToggle={() =>
+                        setOpenMenu((prev) =>
+                          prev === menuKey ? null : menuKey,
+                        )
+                      }
+                      onClose={closeMenu}
+                      onDelete={() => removeStep(step.id)}
+                    />
+                  </div>
+
+                  <label
+                    className={`${styles.stepImageBox} ${styles.stepImageBoxClickable}`}
+                    aria-label={
+                      stepPhotoById[step.id]
+                        ? "Change step photo"
+                        : "Add step photo"
+                    }>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className={styles.srOnly}
+                      onChange={(e) => handleStepPhoto(step.id, e)}
+                    />
+
+                    {stepPhotoById[step.id] ? (
+                      <div className={styles.stepStepPhotoPreview}>
+                        <Image
+                          src={stepPhotoById[step.id]}
+                          alt=""
+                          fill
+                          unoptimized
+                          sizes="210px"
+                          className={styles.stepStepPhotoPreviewImg}
+                        />
+                      </div>
+                    ) : (
+                      <Image
+                        src="/add-photo.png"
+                        alt=""
+                        width={44}
+                        height={44}
+                        className={styles.addPhotoImageSmall}
+                      />
+                    )}
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className={styles.ingredientAddRow}>
+            <button
+              type="button"
+              className={`${styles.ingredientAddButton} ${styles.ingredientAddButtonPrimary}`}
+              onClick={addStep}>
+              Add step
+            </button>
+          </div>
         </div>
-      </div>
-    </section>
-  );
+      </section>
+    );
   },
 );
 

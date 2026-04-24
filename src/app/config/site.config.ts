@@ -7,7 +7,6 @@ export type NavItem = {
 export const siteConfig = {
   navItems: [
     { href: "/", label: "Home" },
-    { href: "/recipes", label: "All recipes" },
     {
       href: "/recipes/new",
       label: "Add recipe",

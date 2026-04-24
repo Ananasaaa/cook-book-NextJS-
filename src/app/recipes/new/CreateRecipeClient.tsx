@@ -319,7 +319,7 @@ export default function CreateRecipeClient({
           <span className={styles.savedText}>Saved</span>
 
           <div className={styles.actions}>
-            <button className="px-2" type="button">
+            <button className={styles.deleteButton} type="button">
               <Image
                 src="/trash.svg"
                 alt=""
